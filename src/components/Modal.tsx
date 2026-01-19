@@ -1,5 +1,5 @@
 import type {FC} from 'react';
-import type {Score} from '../types';
+import type {Role, Score} from '../types';
 
 interface Props {
   isOpen: boolean;
@@ -9,7 +9,7 @@ interface Props {
 
 const Modal: FC<Props> = ({isOpen, score: {player, computer}, onClose}) => {
   if (!isOpen) return null;
-  const winner = player > computer ? 'Player' : player < computer ? 'Computer' : 'Tie';
+  const winner: Role = player > computer ? 'player' : 'computer';
 
   return (
     <div
@@ -25,21 +25,15 @@ const Modal: FC<Props> = ({isOpen, score: {player, computer}, onClose}) => {
           <div className="w-16 h-1 bg-blue-500 mx-auto rounded-full"></div>
         </div>
         <div className="text-center mb-8">
-          {winner === 'Tie' ? (
-            <div className="inline-block px-6 py-3 bg-yellow-100 border-2 border-yellow-400 rounded-lg">
-              <span className="text-2xl font-bold text-yellow-800">It's a Tie! 🎯</span>
-            </div>
-          ) : (
-            <div
-              className={`inline-block px-6 py-3 rounded-lg border-2 ${
-                winner === 'Player' ? 'bg-green-100 border-green-400' : 'bg-red-100 border-red-400'
-              }`}
-            >
-              <span className={`text-2xl font-bold ${winner === 'Player' ? 'text-green-800' : 'text-red-800'}`}>
-                {winner} Wins! 🏆
-              </span>
-            </div>
-          )}
+          <div
+            className={`inline-block px-6 py-3 rounded-lg border-2 ${
+              {player: 'bg-green-100 border-green-400', computer: 'bg-red-100 border-red-400'}[winner]
+            }`}
+          >
+            <span className={`text-2xl font-bold ${{player: 'text-green-800', computer: 'text-red-800'}[winner]}`}>
+              {{player: 'Player', computer: 'Computer'}[winner]} Wins! 🏆
+            </span>
+          </div>
         </div>
         <div className="space-y-4 mb-8">
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">

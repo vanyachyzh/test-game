@@ -2,153 +2,108 @@ import {useState, useEffect, useRef, useCallback} from 'react';
 import Grid from './components/Grid';
 import ScoreDisplay from './components/ScoreDisplay';
 import ControlsSection from './components/ControlsSection';
-import type {Score} from './types';
 import Modal from './components/Modal';
+import type {GameState, Role, Score, SquareType} from './types';
+import {DEFAULT_TIME_MS, INITIAL_SCORE, INITIAL_SQUARES, POINTS_PER_MOVE, WINNING_SCORE} from './constants';
+import {clearTimer, getRandomSquareIndex} from './utils';
 
 const App = () => {
-  const [timeMs, setTimeMs] = useState<string>('1000');
-  const [score, setScore] = useState<Score>({player: 0, computer: 0});
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [isGameRunning, setIsGameRunning] = useState<boolean>(false);
-  const [activeSquare, setActiveSquare] = useState<number | null>(null);
-  const [greenSquares, setGreenSquares] = useState<Set<number>>(new Set());
-  const [redSquares, setRedSquares] = useState<Set<number>>(new Set());
+  const [timeMs, setTimeMs] = useState<string>(String(DEFAULT_TIME_MS));
+  const [score, setScore] = useState<Score>(INITIAL_SCORE);
+  const [gamePhase, setGamePhase] = useState<GameState>('initial');
+  const [squares, setSquares] = useState<Array<SquareType>>(INITIAL_SQUARES);
   const timerRef = useRef<number | null>(null);
-  const activeSquareRef = useRef<number | null>(null);
-  const startNextRoundRef = useRef<(() => void) | null>(null);
-  const greenSquaresRef = useRef<Set<number>>(new Set());
-  const redSquaresRef = useRef<Set<number>>(new Set());
+  const activeSquareRef = useRef<number | null>(null); // Tracks current active square for timer checks
+  const startNextMoveRef = useRef<(() => void) | null>(null); // Keeps latest startNextMove for async calls
 
-  useEffect(() => {
-    greenSquaresRef.current = greenSquares;
-  }, [greenSquares]);
+  const updateScoreAndCheckWin = useCallback(
+    (role: Role, failedSquare: number | null = null) =>
+      setScore((prev) => {
+        const newScore = prev[role] + POINTS_PER_MOVE;
+        const isWin = newScore >= WINNING_SCORE;
 
-  useEffect(() => {
-    redSquaresRef.current = redSquares;
-  }, [redSquares]);
+        setSquares((prevSquares) => prevSquares.map((s, i) => (i === failedSquare ? 'failed' : s)));
+        activeSquareRef.current = null;
 
-  const getRandomSquare = () => {
-    const available = Array.from({length: 100}, (_, i) => i).filter(
-      (i) => !greenSquaresRef.current.has(i) && !redSquaresRef.current.has(i)
+        if (isWin) setGamePhase('finished');
+        // Schedule the next move after a short delay (100ms) so the player can see
+        // the previous square’s result (success or failed).
+        else setTimeout(() => startNextMoveRef.current?.(), 100);
+
+        return {...prev, [role]: newScore};
+      }),
+    []
+  );
+
+  const startNextMove = useCallback(() => {
+    if (gamePhase !== 'running') return;
+
+    const newActiveSquareIndex = getRandomSquareIndex(squares);
+    // Store the active square in a ref so timers can reference it
+    activeSquareRef.current = newActiveSquareIndex;
+
+    setSquares((prev) =>
+      prev.map((status, i) => {
+        if (i === newActiveSquareIndex) return 'active'; // activate the new square
+        if (status === 'active') return 'inactive'; // deactivate previous active square
+        return status;
+      })
     );
-    if (available.length === 0) return Math.floor(Math.random() * 100);
-    return available[Math.floor(Math.random() * available.length)];
-  };
 
-  const startNextRound = useCallback(() => {
-    if (!isGameRunning) return;
+    clearTimer(timerRef);
 
-    const newSquare = getRandomSquare();
-    activeSquareRef.current = newSquare;
-    setActiveSquare(newSquare);
-
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-
-    timerRef.current = window.setTimeout(() => {
-      if (activeSquareRef.current === newSquare) {
-        setRedSquares((prev) => new Set(prev).add(newSquare));
-        setScore((prev) => {
-          const newComputerScore = prev.computer + 1;
-          if (newComputerScore >= 10) {
-            setIsGameRunning(false);
-            setIsOpen(true);
-            setActiveSquare(null);
-            activeSquareRef.current = null;
-          } else {
-            setActiveSquare(null);
-            activeSquareRef.current = null;
-            setTimeout(() => {
-              if (startNextRoundRef.current) {
-                startNextRoundRef.current();
-              }
-            }, 100);
-          }
-          return {...prev, computer: newComputerScore};
-        });
+    timerRef.current = setTimeout(() => {
+      // If the player didn't click the active square in time,
+      // the computer gets a point and the square is marked as failed
+      if (activeSquareRef.current === newActiveSquareIndex) {
+        updateScoreAndCheckWin('computer', newActiveSquareIndex);
       }
-    }, Number(timeMs));
-  }, [isGameRunning, timeMs]);
+    }, Number(timeMs)); // Start a timer for the player reaction window
+  }, [gamePhase, timeMs, updateScoreAndCheckWin, squares]);
 
   useEffect(() => {
-    startNextRoundRef.current = startNextRound;
-  }, [startNextRound]);
+    startNextMoveRef.current = startNextMove;
+  }, [startNextMove]);
 
   const handleSquareClick = (index: number) => {
-    if (!isGameRunning || activeSquare !== index) return;
+    if (gamePhase !== 'running' || squares[index] !== 'active') return;
 
-    setGreenSquares((prev) => new Set(prev).add(index));
-
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-
-    activeSquareRef.current = null;
-    setActiveSquare(null);
-
-    setScore((prev) => {
-      const newPlayerScore = prev.player + 1;
-      if (newPlayerScore >= 10) {
-        setIsGameRunning(false);
-        setIsOpen(true);
-      } else {
-        setTimeout(() => {
-          if (startNextRoundRef.current) {
-            startNextRoundRef.current();
-          }
-        }, 100);
-      }
-      return {...prev, player: newPlayerScore};
-    });
+    setSquares((prev) => prev.map((state, i) => (i === index ? 'success' : state)));
+    clearTimer(timerRef);
+    updateScoreAndCheckWin('player');
   };
 
   const startGame = () => {
-    setScore({player: 0, computer: 0});
-    setGreenSquares(new Set());
-    setRedSquares(new Set());
-    setIsGameRunning(true);
-    setIsOpen(false);
-    setTimeout(() => {
-      if (startNextRoundRef.current) {
-        startNextRoundRef.current();
-      }
-    }, 0);
+    setScore(INITIAL_SCORE);
+    setSquares(INITIAL_SQUARES);
+    activeSquareRef.current = null;
+    setGamePhase('running');
+    setTimeout(() => startNextMoveRef.current?.(), 0);
   };
 
   const resetGame = () => {
-    setIsGameRunning(false);
-    setActiveSquare(null);
+    clearTimer(timerRef);
+    setGamePhase('initial');
+    setScore(INITIAL_SCORE);
+    setSquares(INITIAL_SQUARES);
     activeSquareRef.current = null;
-    setGreenSquares(new Set());
-    setRedSquares(new Set());
-    setScore({player: 0, computer: 0});
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
   };
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-    };
-  }, []);
+  useEffect(() => clearTimer(timerRef), []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl w-full">
         <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">Interactive Mini-Game</h1>
-        <ControlsSection timeMs={timeMs} setTimeMs={setTimeMs} onStart={startGame} isGameRunning={isGameRunning} />
-        <ScoreDisplay score={score} />
-        <Grid
-          activeSquare={activeSquare}
-          greenSquares={greenSquares}
-          redSquares={redSquares}
-          onSquareClick={handleSquareClick}
+        <ControlsSection
+          timeMs={timeMs}
+          setTimeMs={setTimeMs}
+          onStart={startGame}
+          isGameRunning={gamePhase === 'running'}
         />
-        <Modal isOpen={isOpen} score={score} onClose={resetGame} />
+        <ScoreDisplay score={score} />
+        <Grid squares={squares} onSquareClick={handleSquareClick} />
+        <Modal isOpen={gamePhase === 'finished'} score={score} onClose={resetGame} />
       </div>
     </div>
   );
