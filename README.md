@@ -1,73 +1,112 @@
-# React + TypeScript + Vite
+# Test Task
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A fast-paced reaction game built with React, TypeScript, and Vite. Test your reflexes by clicking on active squares before time runs out!
 
-Currently, two official plugins are available:
+## 🎮 Demo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Live demo: [https://test-game-rust.vercel.app/](https://test-game-rust.vercel.app/)
 
-## React Compiler
+## 🎯 Game Rules
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- A random square lights up on a 10x10 grid
+- Click the active square before the timer runs out to score a point
+- If you miss, the computer scores a point
+- First to reach 10 points wins!
 
-## Expanding the ESLint configuration
+## ✨ Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Adjustable difficulty**: Set the reaction time window (in milliseconds)
+- **Real-time scoring**: Track your score vs the computer
+- **Visual feedback**: Different square states (active, success, failed, inactive)
+- **Win condition**: Game ends when either player reaches 10 points
+- **Fully responsive**: Optimized for all screen sizes down to 360px width
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🛠️ Tech Stack
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **React 19** - UI library
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **Tailwind CSS** - Styling
+- **ESLint** - Code linting
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Development
+
+Start the development server:
+
+```bash
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The app will be available at `http://localhost:5173`
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Build for production:
+
+```bash
+npm run build
 ```
+
+Preview the production build:
+
+```bash
+npm run preview
+```
+
+### Code Quality
+
+Lint the code:
+
+```bash
+npm run lint
+```
+
+Format the code:
+
+```bash
+npm run format
+```
+
+## 📱 Responsive Design
+
+The game is fully responsive and optimized for:
+
+- Desktop screens
+- Tablets
+- Mobile devices (down to 360px width)
+
+## 📁 Project Structure
+
+```
+src/
+├── components/      # React components
+│   ├── ControlsSection.tsx
+│   ├── Grid.tsx
+│   ├── Modal.tsx
+│   └── ScoreDisplay.tsx
+├── App.tsx          # Main application component
+├── constants.ts     # Game constants
+├── types.ts         # TypeScript type definitions
+└── utils.ts         # Utility functions
+```
+
+## 🎨 Game States
+
+- **Initial**: Game hasn't started yet
+- **Running**: Game is in progress
+- **Finished**: A player has reached the winning score
