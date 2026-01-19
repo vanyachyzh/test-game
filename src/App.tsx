@@ -92,9 +92,8 @@ const App = () => {
   useEffect(() => clearTimer(timerRef), []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl w-full">
-        <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">Interactive Mini-Game</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-8 max-w-[400px] w-full">
         <ControlsSection
           timeMs={timeMs}
           setTimeMs={setTimeMs}
